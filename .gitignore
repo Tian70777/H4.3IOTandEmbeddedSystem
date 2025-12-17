@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables
+.env
+*.env
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build files
+dist/
+build/
+*.o
+*.hex
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Arduino build files
+*.elf
+*.eep
+*.lss
+*.map
+*.sym
+
+# Arduino credentials (keep config.h private!)
+arduino/**/config.h
+!arduino/**/config.example.h

@@ -1,0 +1,175 @@
+.live-graphs-container {
+  padding: 30px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.graphs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.graphs-header h1 {
+  font-size: 2em;
+  margin: 0;
+  color: white;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9em;
+  backdrop-filter: blur(10px);
+}
+
+.connection-status.connected {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.connection-status.disconnected {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.connection-status.connected .status-dot {
+  background: #34d399;
+  box-shadow: 0 0 10px #34d399;
+}
+
+.connection-status.disconnected .status-dot {
+  background: #f87171;
+  box-shadow: 0 0 10px #f87171;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.graphs-content {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.waveform-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.waveform-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+.waveform-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.waveform-header h2 {
+  margin: 0;
+  font-size: 1.4em;
+  color: white;
+}
+
+.waveform-info {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+.waveform-container {
+  background: #1e1e2e;
+  border-radius: 12px;
+  padding: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 330px;
+}
+
+.waveform-canvas {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+.connection-warning {
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  color: #fbbf24;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  margin-top: 30px;
+  font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .live-graphs-container {
+    padding: 20px;
+  }
+
+  .graphs-header h1 {
+    font-size: 1.6em;
+  }
+
+  .waveform-card {
+    padding: 20px;
+  }
+
+  .waveform-canvas {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .graphs-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .graphs-header h1 {
+    font-size: 1.4em;
+  }
+
+  .waveform-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .waveform-header h2 {
+    font-size: 1.2em;
+  }
+}

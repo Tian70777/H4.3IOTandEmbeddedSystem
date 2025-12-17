@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏠 Smart Home Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #7e22ce 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.6s ease;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            font-weight: 800;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #fff 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        /* Connection Status Bar */
+        .status-bar {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeIn 0.8s ease;
+        }
+
+        .connection-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #ef4444;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.8);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: #10b981;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.8);
+        }
+
+        .last-update {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        /* Main Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        /* Card Styles */
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.6s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .card-icon {
+            font-size: 2em;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-title {
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.9;
+            font-weight: 600;
+        }
+
+        .card-value {
+            font-size: 3.5em;
+            font-weight: 800;
+            margin: 15px 0;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-unit {
+            font-size: 1.2em;
+            opacity: 0.7;
+        }
+
+        .card-label {
+            font-size: 0.95em;
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+
+        /* Temperature Card */
+        .temp-card {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.05));
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .temp-card .card-value {
+            color: #fca5a5;
+        }
+
+        /* Humidity Card */
+        .humidity-card {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.05));
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .humidity-card .card-value {
+            color: #93c5fd;
+        }
+
+        /* LED Status Card */
+        .led-card {
+            background: linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(234, 179, 8, 0.05));
+            border-color: rgba(234, 179, 8, 0.3);
+        }
+
+        .led-indicator {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #4b5563;
+            margin: 20px auto;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .led-indicator.on {
+            background: #fbbf24;
+            box-shadow: 0 0 60px rgba(251, 191, 36, 0.8), 0 0 30px rgba(251, 191, 36, 0.5);
+        }
+
+        /* Fan Speed Card */
+        .fan-card {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.05));
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        .fan-icon {
+            font-size: 4em;
+            margin: 20px 0;
+            display: block;
+            text-align: center;
+            transition: transform 0.5s ease;
+        }
+
+        .fan-icon.spinning {
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .speed-bar {
+            width: 100%;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .speed-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.6);
+        }
+
+        /* Control Panel */
+        .control-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeInUp 0.8s ease;
+        }
+
+        .control-panel h2 {
+            font-size: 1.5em;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 15px 25px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .mode-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .mode-btn.active {
+            background: rgba(139, 92, 246, 0.8);
+            border-color: #a78bfa;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+        }
+
+        .manual-controls {
+            display: none;
+        }
+
+        .manual-controls.active {
+            display: block;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.3);
+            transition: 0.4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #10b981;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .fan-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .fan-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #10b981;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.6);
+        }
+
+        .fan-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #10b981;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.6);
+        }
+
+        .slider-value {
+            text-align: center;
+            font-size: 1.2em;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.7;
+                transform: scale(1.1);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .card-value {
+                font-size: 2.5em;
+            }
+            
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🏠 Smart Home Dashboard</h1>
+            <p>Real-time monitoring and control system</p>
+        </div>
+
+        <!-- Connection Status -->
+        <div class="status-bar">
+            <div class="connection-info">
+                <div class="status-dot" id="statusDot"></div>
+                <div>
+                    <strong id="statusText">Connecting...</strong>
+                </div>
+            </div>
+            <div class="last-update">
+                Last update: <span id="lastUpdate">--:--:--</span>
+            </div>
+        </div>
+
+        <!-- Sensor Data Grid -->
+        <div class="dashboard-grid">
+            <!-- Temperature Card -->
+            <div class="card temp-card">
+                <div class="card-header">
+                    <div class="card-icon">🌡️</div>
+                    <div class="card-title">Temperature</div>
+                </div>
+                <div class="card-value" id="temperature">--</div>
+                <div class="card-unit">°C</div>
+                <div class="card-label">Current room temperature</div>
+            </div>
+
+            <!-- Humidity Card -->
+            <div class="card humidity-card">
+                <div class="card-header">
+                    <div class="card-icon">💧</div>
+                    <div class="card-title">Humidity</div>
+                </div>
+                <div class="card-value" id="humidity">--</div>
+                <div class="card-unit">%</div>
+                <div class="card-label">Relative humidity level</div>
+            </div>
+
+            <!-- LED Status Card -->
+            <div class="card led-card">
+                <div class="card-header">
+                    <div class="card-icon">💡</div>
+                    <div class="card-title">LED Status</div>
+                </div>
+                <div class="led-indicator" id="ledIndicator"></div>
+                <div class="card-label" style="text-align: center; font-size: 1.2em; font-weight: 600;">
+                    <span id="ledStatus">OFF</span>
+                </div>
+            </div>
+
+            <!-- Fan Speed Card -->
+            <div class="card fan-card">
+                <div class="card-header">
+                    <div class="card-icon">💨</div>
+                    <div class="card-title">Fan Speed</div>
+                </div>
+                <div class="fan-icon" id="fanIcon">🌀</div>
+                <div class="card-value" id="fanSpeed">0</div>
+                <div class="card-unit">PWM</div>
+                <div class="speed-bar">
+                    <div class="speed-fill" id="speedFill" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <h2>⚙️ Control Panel</h2>
+            
+            <!-- Mode Toggle -->
+            <div class="mode-toggle">
+                <button class="mode-btn active" id="autoBtn" onclick="setMode('AUTO')">
+                    🤖 AUTO Mode
+                </button>
+                <button class="mode-btn" id="manualBtn" onclick="setMode('MANUAL')">
+                    🎮 MANUAL Mode
+                </button>
+            </div>
+
+            <!-- Manual Controls -->
+            <div class="manual-controls" id="manualControls">
+                <!-- LED Control -->
+                <div class="control-group">
+                    <label class="control-label">💡 LED Control</label>
+                    <label class="switch">
+                        <input type="checkbox" id="ledSwitch" onchange="controlLED(this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <!-- Fan Speed Control -->
+                <div class="control-group">
+                    <label class="control-label">💨 Fan Speed (PWM)</label>
+                    <input type="range" min="0" max="255" value="0" class="fan-slider" id="fanSlider" oninput="controlFan(this.value)">
+                    <div class="slider-value">
+                        Speed: <span id="fanSliderValue">0</span> / 255
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let currentMode = 'AUTO';
+
+        // Connect to WebSocket
+        function connectWebSocket() {
+            ws = new WebSocket('ws://localhost:8080');
+
+            ws.onopen = () => {
+                console.log('✅ WebSocket connected');
+                document.getElementById('statusDot').classList.add('connected');
+                document.getElementById('statusText').textContent = '🟢 Connected';
+            };
+
+            ws.onmessage = (event) => {
+                const message = JSON.parse(event.data);
+                console.log('📥 Received:', message);
+
+                if (message.type === 'sensor_data') {
+                    updateDashboard(message.data);
+                }
+            };
+
+            ws.onclose = () => {
+                console.log('❌ WebSocket disconnected');
+                document.getElementById('statusDot').classList.remove('connected');
+                document.getElementById('statusText').textContent = '🔴 Disconnected';
+                
+                // Reconnect after 3 seconds
+                setTimeout(connectWebSocket, 3000);
+            };
+
+            ws.onerror = (error) => {
+                console.error('⚠️ WebSocket error:', error);
+            };
+        }
+
+        // Update dashboard with real-time data
+        function updateDashboard(data) {
+            // Temperature
+            document.getElementById('temperature').textContent = data.temperature.toFixed(1);
+            
+            // Humidity
+            document.getElementById('humidity').textContent = data.humidity.toFixed(0);
+            
+            // LED Status
+            const ledOn = data.led_status === 1;
+            document.getElementById('ledStatus').textContent = ledOn ? 'ON' : 'OFF';
+            document.getElementById('ledIndicator').classList.toggle('on', ledOn);
+            
+            // Fan Speed
+            const fanSpeed = data.fan_speed || 0;
+            document.getElementById('fanSpeed').textContent = fanSpeed;
+            document.getElementById('speedFill').style.width = (fanSpeed / 255 * 100) + '%';
+            
+            // Fan Animation
+            const fanIcon = document.getElementById('fanIcon');
+            if (fanSpeed > 0) {
+                fanIcon.classList.add('spinning');
+            } else {
+                fanIcon.classList.remove('spinning');
+            }
+            
+            // Update mode
+            if (data.control_mode) {
+                currentMode = data.control_mode;
+                updateModeUI();
+            }
+            
+            // Last Update Time
+            const now = new Date();
+            document.getElementById('lastUpdate').textContent = now.toLocaleTimeString();
+        }
+
+        // Set control mode
+        function setMode(mode) {
+            currentMode = mode;
+            updateModeUI();
+            
+            // Send command to backend
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'command',
+                    command: `MODE:${mode}`
+                }));
+            }
+            
+            console.log(`🔧 Mode changed to: ${mode}`);
+        }
+
+        // Update mode UI
+        function updateModeUI() {
+            const autoBtn = document.getElementById('autoBtn');
+            const manualBtn = document.getElementById('manualBtn');
+            const manualControls = document.getElementById('manualControls');
+            
+            if (currentMode === 'AUTO') {
+                autoBtn.classList.add('active');
+                manualBtn.classList.remove('active');
+                manualControls.classList.remove('active');
+            } else {
+                autoBtn.classList.remove('active');
+                manualBtn.classList.add('active');
+                manualControls.classList.add('active');
+            }
+        }
+
+        // Control LED
+        function controlLED(isOn) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const command = `LED:${isOn ? '1' : '0'}`;
+                ws.send(JSON.stringify({
+                    type: 'command',
+                    command: command
+                }));
+                console.log(`💡 LED: ${isOn ? 'ON' : 'OFF'}`);
+            }
+        }
+
+        // Control Fan
+        function controlFan(speed) {
+            document.getElementById('fanSliderValue').textContent = speed;
+            
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'command',
+                    command: `FAN:${speed}`
+                }));
+                console.log(`💨 Fan speed set to: ${speed}`);
+            }
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            console.log('🚀 Initializing Smart Home Dashboard...');
+            connectWebSocket();
+        });
+    </script>
+</body>
+</html>

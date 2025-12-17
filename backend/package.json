@@ -1,0 +1,34 @@
+{
+  "name": "smart-home-backend",
+  "version": "1.0.0",
+  "description": "Backend server for Smart Home IoT System - handles Serial communication with Arduino, WebSocket broadcasting to frontend, and database operations",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "iot",
+    "arduino",
+    "smart-home",
+    "serial",
+    "websocket"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.4.2",
+    "@serialport/parser-readline": "^12.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.0",
+    "express": "^4.18.2",
+    "mqtt": "^5.14.1",
+    "node-fetch": "^2.7.0",
+    "pg": "^8.11.0",
+    "serialport": "^12.0.0",
+    "three": "^0.182.0",
+    "ws": "^8.14.0"
+  }
+}
