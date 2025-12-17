@@ -1,160 +1,105 @@
 # System Architecture Diagram
 
-## Overview Flow
+## 🏗️ Simple System Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                      SMART HOME IOT SYSTEM                       │
-└─────────────────────────────────────────────────────────────────┘
-
-┌──────────────────┐
-│   HARDWARE       │
-│   (Arduino R4)   │
-│                  │
-│  ┌────────────┐  │
-│  │  DHT22     │  │  Temperature & Humidity Sensor
-│  │  Sensor    │  │
-│  └────────────┘  │
-│                  │
-│  ┌────────────┐  │
-│  │    LED     │  │  Visual Indicator
-│  └────────────┘  │
-│                  │
-│  ┌────────────┐  │
-│  │    Fan     │  │  PWM Controlled (0-255)
-│  │  (PWM)     │  │
-│  └────────────┘  │
-│                  │
-│  ┌────────────┐  │
-│  │ LCD I2C    │  │  16x2 Display
-│  │  Display   │  │
-│  └────────────┘  │
-│                  │
-│  ┌────────────┐  │
-│  │   Touch    │  │  System On/Off Button
-│  │   Button   │  │
-│  └────────────┘  │
-│                  │
-└────────┬─────────┘
-         │
-         │ USB Serial
-         │ 9600 baud
-         │ Format: DATA:temp=23.4,hum=50,led=1,fan=150,mode=AUTO
-         │
-         ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│                    NODE.JS BACKEND SERVER                         │
-│                                                                   │
-│  ┌────────────────────────────────────────────────────────────┐  │
-│  │  SerialTransport.js                                        │  │
-│  │  • Opens COM port                                          │  │
-│  │  • Reads line-by-line data                                 │  │
-│  │  • Parses DATA: messages                                   │  │
-│  │  • Sends commands to Arduino                               │  │
-│  └────────────────────┬───────────────────────────────────────┘  │
-│                       │                                           │
-│                       ▼                                           │
-│  ┌────────────────────────────────────────────────────────────┐  │
-│  │  Main Coordinator (index.js)                               │  │
-│  │  • Receives parsed data from transport                     │  │
-│  │  • Coordinates services                                    │  │
-│  └────────────┬───────────────────┬───────────────┬───────────┘  │
-│               │                   │               │               │
-│               ▼                   ▼               ▼               │
-│  ┌──────────────────┐  ┌─────────────────┐  ┌──────────────┐    │
-│  │ DatabaseService  │  │ WebSocketService│  │  REST API    │    │
-│  │                  │  │                 │  │  (Express)   │    │
-│  │ • Save reading   │  │ • Broadcast     │  │              │    │
-│  │ • Query history  │  │   to all        │  │ • /api/      │    │
-│  │ • Statistics     │  │   clients       │  │   latest     │    │
-│  └────────┬─────────┘  └────────┬────────┘  │ • /api/      │    │
-│           │                     │            │   history    │    │
-│           ▼                     │            │ • /api/      │    │
-│  ┌─────────────────┐            │            │   command    │    │
-│  │   PostgreSQL    │            │            └──────┬───────┘    │
-│  │   Database      │            │                   │            │
-│  │                 │            │                   │            │
-│  │ sensor_readings │            │                   │            │
-│  │   table         │            │                   │            │
-│  └─────────────────┘            │                   │            │
-│                                 │                   │            │
-└─────────────────────────────────┼───────────────────┼────────────┘
-                                  │                   │
-                                  │ WebSocket         │ HTTP
-                                  │ ws://....:8080    │ http://....:3000
-                                  │                   │
-                                  ▼                   ▼
-                    ┌──────────────────────────────────────┐
-                    │      WEB DASHBOARD (Frontend)         │
-                    │                                       │
-                    │  ┌─────────────────────────────────┐  │
-                    │  │  Real-Time Data Display         │  │
-                    │  │  • Temperature Card             │  │
-                    │  │  • Humidity Card                │  │
-                    │  │  • LED Status Card              │  │
-                    │  │  • Fan Speed Card               │  │
-                    │  └─────────────────────────────────┘  │
-                    │                                       │
-                    │  ┌─────────────────────────────────┐  │
-                    │  │  Control Panel                  │  │
-                    │  │  • AUTO Mode Button             │  │
-                    │  │  • MANUAL Mode Button           │  │
-                    │  │  • LED Toggle Switch            │  │
-                    │  │  • Fan Speed Slider (0-255)     │  │
-                    │  └─────────────────────────────────┘  │
-                    │                                       │
-                    └───────────────────────────────────────┘
+│                    SMART HOME IOT SYSTEM                          │
+└──────────────────────────────────────────────────────────────────┘
+
+
+    📟 ARDUINO                🌐 MQTT BROKER           💻 BACKEND
+   (Hardware)              (broker.hivemq.com)        (Node.js)
+  
+  ┌─────────────┐                                   ┌──────────────┐
+  │  DHT22      │                                   │   index.js   │
+  │  LED        │           Publish/Subscribe       │  (Main       │
+  │  Fan        │  ◄──────────────────────────────► │   Server)    │
+  │  LCD        │                                   │              │
+  │  Touch Btn  │                                   └──────┬───────┘
+  └─────────────┘                                          │
+                                                           │
+       Topics:                                             │
+       📤 home/arduino/sensors    (Arduino → Backend)      │
+       📥 home/arduino/control    (Backend → Arduino)      │
+                                                           │
+                                                           ▼
+                                                    ┌──────────────┐
+                                                    │  PostgreSQL  │
+                                                    │   Database   │
+                                                    └──────────────┘
+                                                           │
+                                                           │
+                         WebSocket                         │ HTTP REST
+                         (Real-time)                       │ (History)
+                              │                            │
+                              └────────┬───────────────────┘
+                                       │
+                                       ▼
+                              ┌────────────────┐
+                              │   FRONTEND     │
+                              │  (React App)   │
+                              │                │
+                              │  📊 Dashboard  │
+                              │  🎛️ Controls   │
+                              │  📈 Graphs     │
+                              └────────────────┘
 ```
 
-## Data Flow Diagram
+## 📤 Data Flow: Arduino → Frontend
+
+**Step-by-step:**
 
 ```
-┌───────────┐
-│  Arduino  │  Every 2 seconds
-└─────┬─────┘
-      │
-      │ SENDS: "DATA:temp=23.4,hum=50,led=1,fan=150,mode=AUTO"
-      │
-      ▼
-┌─────────────────────────────────────────┐
-│  Backend - SerialTransport              │
-│  • Receives line via Serial USB         │
-│  • Parses into object:                  │
-│    {                                    │
-│      temperature: 23.4,                 │
-│      humidity: 50,                      │
-│      led_status: 1,                     │
-│      fan_speed: 150,                    │
-│      control_mode: "AUTO",              │
-│      timestamp: Date                    │
-│    }                                    │
-└───────┬─────────────────────────────────┘
-        │
-        ├─────────────┐
-        │             │
-        ▼             ▼
-┌──────────────┐  ┌──────────────────┐
-│  Database    │  │  WebSocket       │
-│              │  │  Service         │
-│  INSERT INTO │  │                  │
-│  sensor_     │  │  Broadcast to    │
-│  readings    │  │  all connected   │
-│              │  │  clients         │
-└──────────────┘  └────────┬─────────┘
-                           │
-                           │ JSON over WebSocket
-                           │
-                           ▼
-                  ┌─────────────────┐
-                  │  Frontend       │
-                  │  Dashboard      │
-                  │                 │
-                  │  Updates UI:    │
-                  │  • Temp: 23.4°C │
-                  │  • Hum: 50%     │
-                  │  • LED: ON      │
-                  │  • Fan: 150     │
-                  └─────────────────┘
+1️⃣  ARDUINO READS SENSORS (Every 2 seconds)
+    ┌──────────────────────────────────────────────┐
+    │  DHT22 sensor: 25.5°C, 60%                  │
+    │  LED status: ON                              │
+    │  Fan speed: 150                              │
+    └──────────────────────────────────────────────┘
+                      │
+                      ▼
+2️⃣  ARDUINO PUBLISHES TO MQTT
+    ┌──────────────────────────────────────────────┐
+    │  Topic: "home/arduino/sensors"              │
+    │  Payload: {"temperature":"25.5",            │
+    │            "humidity":"60",                  │
+    │            "led":"1","fan":"150"}            │
+    └──────────────────────────────────────────────┘
+                      │
+                      ▼
+3️⃣  MQTT BROKER DELIVERS TO BACKEND
+    ┌──────────────────────────────────────────────┐
+    │  Backend subscribed to topic                │
+    │  MqttTransport.js receives message          │
+    └──────────────────────────────────────────────┘
+                      │
+                      ▼
+4️⃣  BACKEND PROCESSES DATA
+    ┌──────────────────────────────────────────────┐
+    │  Parse JSON → Transform to standard format  │
+    │  Call callback: this.onDataCallback(data)   │
+    └──────────────────────────────────────────────┘
+                      │
+         ┌────────────┴────────────┐
+         │                         │
+         ▼                         ▼
+5️⃣  SAVE TO DB              BROADCAST TO FRONTEND
+    ┌──────────────┐         ┌────────────────────┐
+    │ PostgreSQL   │         │ WebSocket          │
+    │ INSERT       │         │ Send to all        │
+    │ sensor_      │         │ connected clients  │
+    │ readings     │         └────────┬───────────┘
+    └──────────────┘                  │
+                                      ▼
+6️⃣  FRONTEND RECEIVES & DISPLAYS
+    ┌──────────────────────────────────────────────┐
+    │  React updates state                        │
+    │  📊 Cards show: 25.5°C, 60%, LED ON         │
+    │  📈 Live graphs add new data point          │
+    └──────────────────────────────────────────────┘
+
+    ⏱️  Total time: < 100ms
 ```
 
 ## Command Flow Diagram
@@ -209,166 +154,205 @@
     Sends updated status back to backend
 ```
 
-## Technology Stack
+## 🔌 Communication Protocols
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      TECHNOLOGY LAYERS                       │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  HARDWARE LAYER                                             │
-│  • Arduino R4 WiFi (Renesas RA4M1, Cortex-M4)              │
-│  • DHT22 Sensor                                             │
-│  • LCD I2C Display (16x2)                                   │
-│  • LED, Fan (PWM), Touch Button                             │
-│                                                             │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  FIRMWARE LAYER                                             │
-│  • Language: C++ (Arduino)                                  │
-│  • Libraries: WiFiS3, DHT, LiquidCrystal_I2C               │
-│  • Protocol: Serial UART (9600 baud)                        │
-│                                                             │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  COMMUNICATION LAYER                                        │
-│  • Serial USB (Arduino ↔ Backend)                           │
-│  • WebSocket (Backend ↔ Frontend)                           │
-│  • HTTP REST API (Frontend ↔ Backend)                       │
-│                                                             │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  BACKEND LAYER                                              │
-│  • Runtime: Node.js v16+                                    │
-│  • Framework: Express.js                                    │
-│  • Packages:                                                │
-│    - serialport (v12.0.0) - Serial communication            │
-│    - ws (v8.14.0) - WebSocket server                        │
-│    - pg (v8.11.0) - PostgreSQL client                       │
-│    - express (v4.18.2) - HTTP server                        │
-│    - cors - Cross-origin support                            │
-│    - dotenv - Environment config                            │
-│                                                             │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  DATABASE LAYER                                             │
-│  • Database: PostgreSQL 15+                                 │
-│  • Table: sensor_readings                                   │
-│  • Indexes: timestamp (DESC), control_mode                  │
-│                                                             │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  FRONTEND LAYER                                             │
-│  • Pure HTML5 + CSS3 + JavaScript (ES6+)                    │
-│  • WebSocket API (native browser)                           │
-│  • Fetch API (for REST calls)                               │
-│  • No frameworks - vanilla JS                               │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
-
-## File Structure Tree
-
-```
-IOTandEmbeddedSystem/
-│
-├── 📄 README.md                    # Main project documentation
-├── 📄 QUICKSTART.md                # Step-by-step setup guide
-├── 📄 .gitignore                   # Git ignore rules
-│
-├── 📁 arduino/
-│   └── 📁 smart_home_main/
-│       └── 📄 smart_home_main.ino  # Arduino C++ code (380 lines)
-│
-├── 📁 backend/
-│   ├── 📁 src/
-│   │   ├── 📄 index.js             # Main server (200 lines)
-│   │   ├── 📁 transports/
-│   │   │   ├── 📄 BaseTransport.js     # Abstract base (100 lines)
-│   │   │   └── 📄 SerialTransport.js   # Serial impl (150 lines)
-│   │   ├── 📁 services/
-│   │   │   ├── 📄 WebSocketService.js  # WS server (120 lines)
-│   │   │   └── 📄 DatabaseService.js   # DB ops (200 lines)
-│   │   └── 📁 api/
-│   │       └── 📄 routes.js        # REST endpoints (180 lines)
-│   ├── 📄 package.json             # Dependencies
-│   ├── 📄 .env.example             # Config template
-│   ├── 📄 .gitignore
-│   ├── 📄 find-port.js             # Helper script
-│   ├── 📄 test-simulate.js         # Test helper
-│   └── 📄 README.md
-│
-├── 📁 frontend/
-│   ├── 📁 public/
-│   │   └── 📄 index.html           # Web dashboard (500 lines)
-│   └── 📄 README.md
-│
-├── 📁 database/
-│   ├── 📄 schema.sql               # PostgreSQL schema
-│   └── 📄 README.md
-│
-└── 📁 Setups/
-    ├── 📄 ProgramStructure.md      # Architecture docs
-    └── 📄 BUILD_SUMMARY.md         # Build summary
-```
-
-## Network Ports
-
-```
-Port 9600 (Serial)    : Arduino ↔ Backend (USB Serial UART)
-Port 3000 (HTTP)      : Backend REST API Server
-Port 8080 (WebSocket) : Backend WebSocket Server
-Port 5432 (PostgreSQL): Database Server
-```
-
-## Security Considerations
+### 3 Different Communication Methods:
 
 ```
 ┌────────────────────────────────────────────────────────────┐
-│  CURRENT STATE (Development/Local)                         │
+│  1️⃣  MQTT (Arduino ↔ Backend)                             │
 ├────────────────────────────────────────────────────────────┤
-│  • No authentication required                              │
-│  • No HTTPS/TLS encryption                                 │
-│  • Database credentials in .env file                       │
-│  • CORS enabled for all origins                            │
-│  • Running on localhost                                    │
-│                                                            │
-│  ⚠️  NOT SUITABLE FOR INTERNET DEPLOYMENT                 │
+│  Purpose:  Arduino sends data, receives commands          │
+│  Protocol: MQTT (Message Queue Telemetry Transport)       │
+│  Broker:   broker.hivemq.com:1883                         │
+│  Topics:   • home/arduino/sensors   (Arduino publishes)   │
+│            • home/arduino/control   (Arduino subscribes)  │
+│  QoS:      1 (guaranteed delivery)                        │
+│  Library:  PubSubClient (Arduino)                         │
+│            mqtt (Node.js)                                 │
 └────────────────────────────────────────────────────────────┘
 
 ┌────────────────────────────────────────────────────────────┐
-│  PRODUCTION IMPROVEMENTS (If Deploying Online)             │
+│  2️⃣  WebSocket (Backend ↔ Frontend)                       │
 ├────────────────────────────────────────────────────────────┤
-│  • Add user authentication (JWT tokens)                    │
-│  • Enable HTTPS/TLS with SSL certificates                  │
-│  • Restrict CORS to specific domains                       │
-│  • Use environment variables for secrets                   │
-│  • Implement rate limiting                                 │
-│  • Add input validation & sanitization                     │
-│  • Use secure WebSocket (WSS://)                           │
+│  Purpose:  Real-time bidirectional communication          │
+│  Protocol: WebSocket (ws://)                              │
+│  Port:     8080                                           │
+│  Use:      • Backend → Frontend: Sensor data broadcasts   │
+│            • Frontend → Backend: Control commands         │
+│  Library:  ws (Node.js)                                   │
+│            Native WebSocket API (Browser)                 │
+└────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────┐
+│  3️⃣  HTTP REST (Frontend ↔ Backend)                       │
+├────────────────────────────────────────────────────────────┤
+│  Purpose:  Database queries (history, statistics)         │
+│  Protocol: HTTP                                           │
+│  Port:     3000                                           │
+│  Endpoints:                                               │
+│    • GET  /api/history         (Historical data)          │
+│    • GET  /api/statistics      (Min/max/avg)              │
+│    • POST /api/control/mode    (Set AUTO/MANUAL)          │
+│    • POST /api/control/manual  (Manual controls)          │
+│  Library:  Express (Node.js)                              │
+│            Fetch API (Browser)                            │
 └────────────────────────────────────────────────────────────┘
 ```
 
-## Performance Metrics
+## 🛠️ Technology Stack
 
 ```
-Data Frequency:
-• Arduino reads sensors: Every 2 seconds
-• Arduino sends data: Every 2 seconds
-• Backend saves to DB: Every data receipt (~2 sec)
-• Backend broadcasts WS: Every data receipt (~2 sec)
+Layer          | Technology                  | Purpose
+───────────────┼─────────────────────────────┼──────────────────────
+🔧 HARDWARE    | Arduino R4 WiFi             | Microcontroller
+               | DHT22                       | Temp & Humidity sensor
+               | LED, Fan, LCD, Touch button | Actuators & I/O
+───────────────┼─────────────────────────────┼──────────────────────
+📡 ARDUINO     | C++ / Arduino               | Firmware language
+               | WiFiS3                      | WiFi connectivity
+               | PubSubClient                | MQTT client
+               | DHT, LiquidCrystal_I2C      | Sensor libraries
+───────────────┼─────────────────────────────┼──────────────────────
+☁️  MQTT       | broker.hivemq.com           | Free public MQTT broker
+               | Port 1883                   | Standard MQTT port
+───────────────┼─────────────────────────────┼──────────────────────
+⚙️  BACKEND    | Node.js 16+                 | Runtime
+               | Express.js                  | HTTP server
+               | ws (v8.14.0)                | WebSocket server
+               | mqtt (v5.3.0)               | MQTT client
+               | pg (v8.11.0)                | PostgreSQL client
+───────────────┼─────────────────────────────┼──────────────────────
+💾 DATABASE    | PostgreSQL 15+              | Data storage
+               | sensor_readings table       | Main data table
+───────────────┼─────────────────────────────┼──────────────────────
+🌐 FRONTEND    | React 18.2.0                | UI framework
+               | TypeScript                  | Type-safe JS
+               | Vite 5.4.21                 | Build tool
+               | Three.js                    | 3D visualizations
+               | Canvas API                  | Live waveform graphs
+───────────────┴─────────────────────────────┴──────────────────────
+```
 
-Expected Throughput:
-• 30 readings per minute
-• 1,800 readings per hour
-• 43,200 readings per day
+## 📂 Key Files
 
-Database Growth:
-• ~1 KB per reading
-• ~43 MB per day
-• ~1.3 GB per month
+```
+📁 arduino/smart_home_main/
+   ├── smart_home_main.ino   (Main Arduino code - 560 lines)
+   ├── config.h              (WiFi & MQTT settings)
+   ├── wifi_helper.h         (WiFi connection functions)
+   └── mqtt_helper.h         (MQTT helper functions)
+
+📁 backend/src/
+   ├── index.js              (Main server - registers callbacks)
+   ├── transports/
+   │   ├── BaseTransport.js  (Parent class with onData method)
+   │   └── MqttTransport.js  (MQTT communication)
+   ├── services/
+   │   ├── WebSocketService.js  (Real-time to frontend)
+   │   └── DatabaseService.js   (PostgreSQL operations)
+   └── api/
+       └── routes.js         (HTTP REST endpoints)
+
+📁 frontend/src/
+   ├── main.tsx              (App entry point)
+   ├── App.tsx               (Main layout)
+   ├── hooks/
+   │   └── useWebSocket.ts   (WebSocket connection hook)
+   └── components/
+       ├── SensorCard.tsx    (Display temp/humidity/etc)
+       ├── ControlPanel.tsx  (Buttons & sliders)
+       ├── LiveGraphs.tsx    (Waveform oscilloscope)
+       └── HistoricalAnalysis.tsx  (Charts & statistics)
+
+📁 database/
+   └── schema.sql            (PostgreSQL table definitions)
+```
+
+## 🔢 Ports & Connections
+
+```
+Port 1883  : MQTT Broker (broker.hivemq.com)
+Port 3000  : Backend HTTP REST API
+Port 8080  : Backend WebSocket Server
+Port 5432  : PostgreSQL Database
+```
+
+## ⚡ System Performance
+
+```
+⏱️  Data Flow Speed:
+    • Arduino → MQTT Broker:        ~50ms
+    • MQTT Broker → Backend:        ~50ms
+    • Backend → Frontend:           ~10ms
+    • Total end-to-end latency:     <200ms
+
+📊 Data Frequency:
+    • Sensor readings:              Every 2 seconds
+    • Database writes:              Every 2 seconds
+    • WebSocket broadcasts:         Every 2 seconds
+    • Throughput:                   30 readings/minute
+                                   1,800 readings/hour
+                                   43,200 readings/day
+
+💾 Database Growth:
+    • Per reading:                  ~1 KB
+    • Per day:                      ~43 MB
+    • Per month:                    ~1.3 GB
+```
+
+## 🎯 Key Features
+
+```
+✅ Real-time sensor monitoring (temperature, humidity)
+✅ AUTO mode: Automatic LED & fan control based on humidity
+✅ MANUAL mode: User controls LED & fan from dashboard
+✅ Live waveform graphs (50-point rolling buffer)
+✅ Historical data analysis with charts
+✅ 3D visualizations (LED & fan models)
+✅ Touch button to turn system on/off
+✅ LCD display shows current readings
+✅ PostgreSQL database stores all readings
+✅ MQTT for reliable Arduino communication
+✅ WebSocket for real-time frontend updates
+✅ Responsive React dashboard with TypeScript
 ```
 
 ---
 
-*This diagram provides a complete visual reference for the system architecture.*
+## 🔄 Callback Pattern (Core Architecture)
+
+The system uses **callbacks** for event-driven communication:
+
+```javascript
+// Registration phase (at startup)
+transport.onData((sensorData) => {
+  db.saveReading(sensorData);        // Save to database
+  wsService.broadcast('sensor_data', sensorData);  // Send to frontend
+});
+
+// Invocation phase (when Arduino sends data)
+// Inside MqttTransport.js:
+if (this.onDataCallback) {
+  this.onDataCallback(transformedData);  // ← Calls function above
+}
+```
+
+**Same pattern for commands:**
+
+```javascript
+// Registration (at startup)
+wsService.onCommand((command) => {
+  transport.sendCommand(command);  // Send to Arduino via MQTT
+});
+
+// Invocation (when frontend sends command)
+// Inside WebSocketService.js:
+if (this.onCommandReceived) {
+  this.onCommandReceived(data.command);  // ← Calls function above
+}
+```
+
+---
+
+*Simple, clear architecture with MQTT for reliable IoT communication!* 🚀

@@ -20,7 +20,7 @@ WiFiServer httpServer(HTTP_PORT);  // HTTP server from config
 
 // ========== GLOBAL OBJECTS ==========
 WiFiClient wifiClient;
-PubSubClient mqttClient(wifiClient);
+PubSubClient mqttClient(wifiClient); //  Handles MQTT communication using WiFi
 DHT dht(DHTPIN, DHTTYPE);
 LiquidCrystal_I2C lcd(LCD_ADDRESS, LCD_COLS, LCD_ROWS);
 
@@ -110,7 +110,10 @@ void setup() {
   
   // ========== MQTT SETUP ==========
   if (currentMode == MODE_ONLINE) {
-    mqttClient.setServer(MQTT_SERVER, MQTT_PORT);
+    mqttClient.setServer(MQTT_SERVER, MQTT_PORT); // Tell MQTT client which broker to connect to
+    // Register a function to handle incoming messages
+    // Like: "When someone sends me a message, call this function"
+    // This is the callback pattern again!
     mqttClient.setCallback(mqttCallback);
     Serial.println("MQTT client configured");
   }

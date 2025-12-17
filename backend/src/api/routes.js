@@ -61,7 +61,7 @@ function initializeRoutes(dbService, transport) {
         count: history.length,
         limit: limit,
         offset: offset,
-        data: history
+        data: history  // Array of sensor readings
       });
     } catch (error) {
       console.error('[API] Error fetching history:', error.message);

@@ -7,16 +7,16 @@ const BaseTransport = require('./BaseTransport');
  */
 class MqttTransport extends BaseTransport {
     constructor(config) {
-        super();
+        super(); // Call parent constructor
         this.broker = config.broker || 'broker.hivemq.com';
         this.port = config.port || 1883;
         this.useSSL = config.useSSL || false;
         this.topics = {
-            sensorData: config.topics?.sensorData || 'home/arduino/sensors',
-            control: config.topics?.control || 'home/arduino/control',
+            sensorData: config.topics?.sensorData || 'home/arduino/sensors',   // Arduino publishes here
+            control: config.topics?.control || 'home/arduino/control',         // Backend sends control commands here   
         };
         
-        this.client = null;
+        this.client = null;          // MQTT client instance
         this.isConnected = false;
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 10;
@@ -30,15 +30,15 @@ class MqttTransport extends BaseTransport {
             // Build broker URL
             const protocol = this.useSSL ? 'mqtts' : 'mqtt';
             const brokerUrl = `${protocol}://${this.broker}:${this.port}`;
-
+            // Result: 'mqtt://broker.hivemq.com:1883'
             console.log(`[MQTT] Connecting to ${brokerUrl}...`);
             
             // Connect to broker
             this.client = mqtt.connect(brokerUrl, {
                 clientId: `smart_home_backend_${Math.random().toString(16).slice(2, 8)}`,
-                clean: true,
-                connectTimeout: 4000,
-                reconnectPeriod: 1000,
+                clean: true,            // Start fresh (don't keep old messages)
+                connectTimeout: 4000,   // Timeout for initial connection
+                reconnectPeriod: 1000,  // Interval between reconnection attempts
             });
 
             // Handle connection success
@@ -65,13 +65,13 @@ class MqttTransport extends BaseTransport {
                     if (topic === this.topics.sensorData) {
                         const data = JSON.parse(message.toString());
                         console.log('[MQTT] Received sensor data:', data);
-                        
+                        // Arduino sent: {"temperature":"22.2","humidity":"44.6","led":"0","fan":"0","mode":"AUTO"}
                         // Transform to standard format
                         const transformedData = {
-                            temperature: parseFloat(data.temperature),
-                            humidity: parseFloat(data.humidity),
-                            led_status: parseInt(data.led),
-                            fan_speed: parseInt(data.fan),
+                            temperature: parseFloat(data.temperature), // Convert "22.2" → 22.2
+                            humidity: parseFloat(data.humidity),       // Convert "44.6" → 44.6
+                            led_status: parseInt(data.led),             // Convert "0" → 0
+                            fan_speed: parseInt(data.fan),               // Convert "0" → 0
                             control_mode: data.mode || 'UNKNOWN',
                             timestamp: new Date(),
                         };
@@ -129,7 +129,10 @@ class MqttTransport extends BaseTransport {
 
         return new Promise((resolve, reject) => {
             console.log(`[MQTT] Publishing command to ${this.topics.control}: ${command}`);
-            
+            /*QoS 0 - "Fire and forget" (may lose message)
+            QoS 1 - "At least once" (guaranteed delivery, may duplicate)
+            QoS 2 - "Exactly once" (slowest, guaranteed no duplicates)
+            Use QoS 1 for commands - important they arrive, but okay if duplicated */
             this.client.publish(this.topics.control, command, { qos: 1 }, (err) => {
                 if (err) {
                     console.error('[MQTT] Failed to publish command:', err);

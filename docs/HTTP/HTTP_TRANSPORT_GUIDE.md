@@ -24,7 +24,7 @@ Your backend now supports **two transport methods** for communicating with Ardui
 **YES, Arduino and laptop MUST be on the same network** for HTTP to work:
 
 1. **Same WiFi Network**: Both devices must connect to the same WiFi router
-   - Arduino connects to: `TCH3WG15XG` or `prog`
+   - Arduino connects to your WiFi network
    - Your laptop must connect to the same network
    
 2. **Local Network Communication**: 

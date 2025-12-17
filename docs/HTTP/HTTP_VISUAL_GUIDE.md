@@ -189,7 +189,7 @@ Arduino                  WiFi Network              Laptop
 
 ```
                     🏠 Your Home WiFi Router
-                         (TCH3WG15XG)
+                         (YourWiFi)
                     IP: 192.168.1.1
                               │
                 ┌─────────────┴─────────────┐
@@ -204,7 +204,7 @@ Arduino                  WiFi Network              Laptop
         
         ⚠️  MUST BE ON SAME NETWORK!
         
-        ✅ Both connected to: TCH3WG15XG
+        ✅ Both connected to: YourWiFi
         ✅ Both have 192.168.1.x addresses
         ✅ Can communicate locally
 ```

@@ -425,20 +425,6 @@ You implemented **all three** as modular transports! This shows:
 - ✅ Design flexibility
 - ✅ Professional architecture (strategy pattern)
 
-**Configuration-based selection:**
-```javascript
-if (CONFIG.transport.type === 'mqtt') {
-  transport = new MqttTransport(CONFIG.mqtt);
-}
-else if (CONFIG.transport.type === 'serial') {
-  transport = new SerialTransport(CONFIG.serial.port);
-}
-else if (CONFIG.transport.type === 'http') {
-  transport = new HttpTransport(CONFIG.http.arduinoUrl);
-}
-```
-
-**This is a professional-level design!**
 
 ---
 

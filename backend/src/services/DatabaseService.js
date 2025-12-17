@@ -1,8 +1,9 @@
 // Database Service
 // Handles PostgreSQL database operations
 
-const { Pool } = require('pg');
-
+const { Pool } = require('pg'); // PostgreSQL client
+// a pool is a collection of reusable database connections
+// faster than opening/closing a new connection each time
 class DatabaseService {
   constructor(config) {
     this.config = config;  // Store connection info
@@ -29,7 +30,7 @@ class DatabaseService {
       // Check if table exists, create if not
       await this.initializeTable(client);
       
-      client.release(); // Close test connection
+      client.release(); // Close test connection, Give connection back to pool
     } catch (error) {
       console.error('[Database] Connection error:', error.message);
       throw error;
@@ -67,6 +68,7 @@ class DatabaseService {
    */
   async saveReading(data) {
     // SQL query with placeholders ($1, $2, $3...)
+    // SQL injection protection! Values are escaped automatically
     const query = `
       INSERT INTO sensor_readings (temperature, humidity, led_status, fan_speed, control_mode)
       VALUES ($1, $2, $3, $4, $5)

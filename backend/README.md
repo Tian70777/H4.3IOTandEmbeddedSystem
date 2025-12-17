@@ -111,3 +111,62 @@ Arduino (Serial USB) → SerialTransport → DatabaseService
 **WebSocket not connecting:**
 - Check `WS_PORT` is not in use
 - Verify no firewall blocking the port
+
+
+┌─────────────────────────────────────────────────────────────┐
+│                    STARTUP (Registration)                    │
+└─────────────────────────────────────────────────────────────┘
+
+index.js creates instances:
+  - wsService = new WebSocketService()
+  - transport = new MqttTransport()
+  - dbService = new DatabaseService()
+
+index.js registers callbacks:
+  
+  ┌─────────────────────────────────────┐
+  │ wsService.onCommand((cmd) => { ... })│
+  └───────────────┬─────────────────────┘
+                  ↓
+          Stores function in:
+          this.onCommandReceived
+  
+  ┌─────────────────────────────────────┐
+  │ transport.onData((data) => { ... }) │
+  └───────────────┬─────────────────────┘
+                  ↓
+          Stores function in:
+          this.onDataCallback
+
+
+┌─────────────────────────────────────────────────────────────┐
+│                   RUNTIME (Invocation)                       │
+└─────────────────────────────────────────────────────────────┘
+
+SCENARIO A: User sends command
+  
+  Browser → ws.send('LED:1')
+       ↓
+  WebSocketService receives
+       ↓
+  Calls: this.onCommandReceived('LED:1')
+       ↓
+  Triggers index.js function
+       ↓
+  transport.sendCommand('LED:1')
+       ↓
+  MQTT → Arduino
+
+SCENARIO B: Arduino sends data
+  
+  Arduino → MQTT
+       ↓
+  MqttTransport receives
+       ↓
+  Calls: this.onDataCallback(data)
+       ↓
+  Triggers index.js function
+       ↓
+  dbService.save() AND wsService.broadcast()
+       ↓
+  All stored clients receive data

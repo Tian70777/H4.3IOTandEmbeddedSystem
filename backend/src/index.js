@@ -158,6 +158,8 @@ async function initialize() {
     We forward it to Arduino via transport (MQTT/Serial/HTTP)
     Flow: Browser → WebSocket → Backend → MQTT → Arduino
     */
+    // (data) => { ... } is a callback function, saved in wsService.onCommandReceived
+    // mqttTransport.onCommandReceived = (command) => { ... }
     wsService.onCommand((command) => {
       console.log('[Command] Received from frontend:', command);
       
@@ -229,7 +231,8 @@ async function initialize() {
       });
     });
 
-    // Start HTTP server
+    // Start HTTP server:Starts listening on port 3000
+    // Now browsers can make HTTP requests to http://localhost:3000
     httpServer = app.listen(CONFIG.server.httpPort, () => {
       console.log(`[HTTP] REST API server listening on port ${CONFIG.server.httpPort}`);
     });

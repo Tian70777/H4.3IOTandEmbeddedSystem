@@ -97,9 +97,9 @@ if (currentMode == MODE_ONLINE) {
 ## 📊 What You'll See in Serial Monitor
 
 ```
-Connecting to Tian
+Connecting to YourWiFi
 ....
-Connected! IP: 10.108.131.16
+Connected! IP: 192.168.1.100
 HTTP server started on port 80
 MQTT client configured
 [MQTT] Attempting connection to broker.hivemq.com:1883

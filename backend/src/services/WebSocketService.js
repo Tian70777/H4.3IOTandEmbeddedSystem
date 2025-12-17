@@ -6,8 +6,8 @@ const WebSocket = require('ws');
 class WebSocketService {
   constructor(port = 8080) {
     this.port = port;
-    this.wss = null;
-    this.clients = new Set();
+    this.wss = null;            // WebSocket server instance
+    this.clients = new Set();   // Set of connected clients
   }
 
   /**
@@ -42,9 +42,9 @@ class WebSocketService {
           if (data.type === 'command' && data.command) {
             console.log(`[WebSocket] Forwarding command to Arduino: ${data.command}`);
             
-            // Emit event so index.js can handle it
+            // 🔥 THIS LINE CALLS THE CALLBACK!
             if (this.onCommandReceived) {
-              this.onCommandReceived(data.command);
+              this.onCommandReceived(data.command); // ← Calls the function stored in this.onCommandReceived
             }
           }
         } catch (error) {
@@ -135,6 +135,7 @@ class WebSocketService {
 
   /**
    * Register callback for when command is received from frontend
+   * This is a SETTER method
    * @param {Function} callback - Function to call with command string
    */
   onCommand(callback) {
