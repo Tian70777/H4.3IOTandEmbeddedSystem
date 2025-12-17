@@ -1,9 +1,9 @@
 // Smart Home Backend - Main Entry Point
 // Coordinates Serial communication, WebSocket broadcasting, database storage, and REST API
 
-require('dotenv').config(); // ← This reads the .env file
-const express = require('express');
-const cors = require('cors');
+require('dotenv').config(); // ← This reads the .env file, DB credentials etc.
+const express = require('express'); // ← Web framework for HTTP API
+const cors = require('cors'); // ← Allows frontend to talk to backend
 
 const SerialTransport = require('./transports/SerialTransport');
 const HttpTransport = require('./transports/HttpTransport');
@@ -13,25 +13,29 @@ const DatabaseService = require('./services/DatabaseService');
 const initializeRoutes = require('./api/routes');
 
 // ========== CONFIGURATION ==========
+// Creates a big object with all settings
 const CONFIG = {
   transport: {
+    // Default to MQTT if not set
     type: process.env.TRANSPORT_TYPE || 'mqtt' // 'serial', 'http', or 'mqtt'
   },
   serial: {
     port: process.env.SERIAL_PORT || 'COM3',
-    baudRate: parseInt(process.env.SERIAL_BAUD_RATE) || 9600
+    baudRate: parseInt(process.env.SERIAL_BAUD_RATE) || 9600 // Communication speed
   },
   http: {
     arduinoUrl: process.env.ARDUINO_HTTP_URL || 'http://192.168.1.150',
     pollInterval: parseInt(process.env.HTTP_POLL_INTERVAL) || 2000
   },
   mqtt: {
-    broker: process.env.MQTT_BROKER || 'broker.hivemq.com',
-    port: parseInt(process.env.MQTT_PORT) || 1883,
+    broker: process.env.MQTT_BROKER || 'broker.hivemq.com', // MQTT server address
+    port: parseInt(process.env.MQTT_PORT) || 1883,          // MQTT server port
     useSSL: process.env.MQTT_USE_SSL === 'true',
     topics: {
+      // Where Arduino publishes data
       sensorData: process.env.MQTT_TOPIC_SENSOR_DATA || 'home/arduino/sensors',
-      control: process.env.MQTT_TOPIC_CONTROL || 'home/arduino/control',
+      // Where we send commands
+      ontrol: process.env.MQTT_TOPIC_CONTROL || 'home/arduino/control',
     }
   },
   database: {
@@ -42,17 +46,17 @@ const CONFIG = {
     password: process.env.DB_PASSWORD || ''
   },
   server: {
-    httpPort: parseInt(process.env.HTTP_PORT) || 3000,
-    wsPort: parseInt(process.env.WS_PORT) || 8080
+    httpPort: parseInt(process.env.HTTP_PORT) || 3000, // REST API port
+    wsPort: parseInt(process.env.WS_PORT) || 8080 // WebSocket port
   }
 };
 
 // ========== SERVICE INSTANCES ==========
-let transport = null;
-let wsService = null;
-let dbService = null;
-let app = null;
-let httpServer = null;
+let transport = null; // Will hold MqttTransport/SerialTransport/HttpTransport
+let wsService = null; // Will hold WebSocketService
+let dbService = null; // Will hold DatabaseService
+let app = null;       // Will hold Express app
+let httpServer = null;// Will hold HTTP server instance
 
 // ========== INITIALIZATION ==========
 async function initialize() {
@@ -61,14 +65,20 @@ async function initialize() {
   console.log('========================================\n');
 
   try {
-    // 1. Initialize Database
+    // 1. Initialize Database, Create a new DatabaseService object
+    // passing config (host, port, password, etc.)
+    // Call connect() which returns a Promise
+    // await means "wait here until connect() finishes before continuing"
     console.log('[Init] Connecting to database...');
     dbService = new DatabaseService(CONFIG.database);
     await dbService.connect();
 
     // 2. Initialize WebSocket Service
+    // This handles client connections and broadcasting data
+    // Creates WebSocket server listening on port 8080
+    // Browser can connect: new WebSocket('ws://localhost:8080')
     console.log('[Init] Starting WebSocket server...');
-    wsService = new WebSocketService(CONFIG.server.wsPort);
+    wsService = new WebSocketService(CONFIG.server.wsPort); // Pass 8080
     wsService.start();
 
     // 3. Initialize Transport based on configuration
@@ -80,7 +90,7 @@ async function initialize() {
       transport = new MqttTransport(CONFIG.mqtt);
       
       try {
-        await transport.connect();
+        await transport.connect(); // Connect to broker.hivemq.com
         transportInitialized = true;
         console.log('[Init] ✓ MQTT connection successful!');
       } catch (error) {
@@ -120,7 +130,12 @@ async function initialize() {
       throw new Error('No transport configured. Set TRANSPORT_TYPE in .env to mqtt, serial, or http');
     }
     
-    // Register data handler (Arduino → Backend)
+    // Register data handler (Arduino → Backend) (MOST IMPORTANT!)
+    /*transport.onData(...) - "When Arduino sends data, do this..."
+    data - Object like { temperature: 22.2, humidity: 44.6, led_status: 0, fan_speed: 0 }
+    await dbService.saveReading(data) - Save to PostgreSQL (takes ~10ms)
+    wsService.broadcast(data) - Push to all connected browsers instantly
+    */
     transport.onData(async (data) => {
       console.log('[Data] Received from Arduino:', data);
 
@@ -130,12 +145,19 @@ async function initialize() {
         
         // Broadcast to WebSocket clients
         wsService.broadcast(data);
+
       } catch (error) {
         console.error('[Data] Error processing data:', error.message);
       }
     });
 
     // Register command handler (Frontend → Arduino via WebSocket)
+    /*
+    Browser sends: { type: 'command', command: 'LED:1' } via WebSocket
+    WebSocketService calls this callback function
+    We forward it to Arduino via transport (MQTT/Serial/HTTP)
+    Flow: Browser → WebSocket → Backend → MQTT → Arduino
+    */
     wsService.onCommand((command) => {
       console.log('[Command] Received from frontend:', command);
       
@@ -153,14 +175,14 @@ async function initialize() {
     app = express();
     
     // Middleware
-    app.use(cors());
-    app.use(express.json());
+    app.use(cors()); // Allow requests from localhost:5173
+    app.use(express.json()); // Parse JSON in request body
     app.use(express.urlencoded({ extended: true }));
 
     // Request logging
     app.use((req, res, next) => {
       console.log(`[HTTP] ${req.method} ${req.path}`);
-      next();
+      next(); // Continue to next handler
     });
 
     // Health check endpoint
@@ -182,6 +204,11 @@ async function initialize() {
     });
 
     // API routes
+    /*
+    Call initializeRoutes() function (from routes.js)
+    Pass it dbService and transport so routes can use them
+    Mount all routes under /api prefix
+    */
     const apiRoutes = initializeRoutes(dbService, transport);
     app.use('/api', apiRoutes);
 
